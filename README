@@ -1,0 +1,6 @@
+= s3sync =
+
+Laptop-proof file sync with amazon s3. Script can be put in cron/launchd. 
+Currenly backs up files marked with green label in MacOSX finder.
+
+IMPORTANT: still very much WIP and does not always find all green label folders, so please use for reference/inspiration only!
