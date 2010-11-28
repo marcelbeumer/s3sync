@@ -21,7 +21,6 @@ read synced < .s3sync-synced-stamp
 today=`date '+%Y%m%d'`
 
 # Prepare the folder structure
-# TODO: support for mutliple folders with same name
 if [ "$current" = "$today" ]
 then
     # If we already have a current directory for today we do nothing
