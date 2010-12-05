@@ -3,6 +3,7 @@
 # kill running process and write new pid
 test -f ~/.s3sync-pid && kill -9 $(cat ~/.s3sync-pid) 2>/dev/null
 echo $$ > ~/.s3sync-pid
+printf "`date '+%Y%m%d %H:%M'`\n" > ~/.s3sync-log
 
 #config
 BUCKET=redbackup
@@ -58,7 +59,11 @@ else
     echo "Syncing..."
     
     # Sync and append output to output file
-    read result < <(s3cmd sync $syncdir/ s3://$BUCKET/$synctype/ --follow-symlinks --delete-removed 2>&1)
+    cd $syncdir
+    s3cmd sync . s3://$BUCKET/$synctype/ --follow-symlinks --delete-removed > ~/.s3sync-cmdresult 2>&1
+    read result < ~/.s3sync-cmdresult
+
+    echo $result
     
     # And check if we are done, and ff so,
     # set a new synced.stamp so the next round will not sync.
