@@ -1,39 +1,53 @@
 #!/bin/bash
 
 # kill running process and write new pid
-test -f .s3sync-pid && kill -9 $(cat .s3sync-pid) 2>/dev/null
-echo $$ > .s3sync-pid
+test -f ~/.s3sync-pid && kill -9 $(cat ~/.s3sync-pid) 2>/dev/null
+echo $$ > ~/.s3sync-pid
 
 #config
-BUCKET=mbeumer-laptop-backup
+BUCKET=redbackup
+syncdir=~/.s3synctree
 
 # set IFS
 oldifs=$IFS
 IFS=$'\n'
 
 # get all the timestamps we need
-# TODO: can be shorter
-# TODO: do stamps based on file timestamp
-touch .s3sync-current-stamp
-touch .s3sync-synced-stamp
-read current < .s3sync-current-stamp
-read synced < .s3sync-synced-stamp
+touch ~/.s3sync-synced-stamp
+read synced < ~/.s3sync-synced-stamp
 today=`date '+%Y%m%d'`
+day=$(date +%A)
+day_num=$(date +%d)
 
-# Prepare the folder structure
-if [ "$current" = "$today" ]
-then
-    # If we already have a current directory for today we do nothing
-    echo "File structure already in place"
-else
-    # If we don't, we create the file structure
-    echo "Creating file structure"
-    dirlist=$(mdfind 'kMDItemFSLabel == 2')
-    test ! -d .s3sync-current && mkdir .s3sync-current || rm -rf .s3sync-current/*
-    #eval "cp -r $(printf '"%s" ' $dirlist).s3sync-current" 
-    eval "find $(printf '"%s" ' $dirlist) | cpio -pad .s3sync-current --quiet 2>&1 | xargs echo $1 > /dev/null"
-    echo $today > .s3sync-current-stamp
+# determine type
+if [ $day_num == 1 ]; then
+	synctype=month
+elif [ $day != "Saturday" ]; then
+    synctype=daily
+else 
+	synctype=weekly
 fi
+
+# make directory structure based on symlinks. This should be very fast.
+dirlist=$(cat dirlist.conf | sort)
+rm -rf $syncdir && mkdir $syncdir
+
+for d in $dirlist
+do
+    bdir=$(dirname "$d")
+    dir=$(basename "$d")
+    sdir_base=$syncdir$bdir
+    sdir_target=$syncdir$bdir/$dir
+    
+    if test ! -d "$sdir_target"
+    then
+        printf "($now) Creating \"%s\"\n" $sdir_target
+        mkdir -p "$sdir_base"
+        ln -s $d $sdir_target
+    else
+        printf "($now) Skipping \"$sdir_target\", already exists.\n"
+    fi
+done
 
 # Sync data with cloud
 if [ "$synced" == "$today" ]; then
@@ -44,12 +58,12 @@ else
     echo "Syncing..."
     
     # Sync and append output to output file
-    read result < <(s3cmd sync .s3sync-current/ s3://$BUCKET/ --delete-removed 2>&1)
+    read result < <(s3cmd sync $syncdir/ s3://$BUCKET/$synctype/ --follow-symlinks --delete-removed 2>&1)
     
     # And check if we are done, and ff so,
     # set a new synced.stamp so the next round will not sync.
-    test "$result" = "" && echo $today > .s3sync-synced-stamp
+    test "$result" = "" && echo $today > ~/.s3sync-synced-stamp
 fi
 
 # clean pid file
-rm .s3sync-pid
+rm ~/.s3sync-pid
