@@ -3,7 +3,7 @@
 # kill running process and write new pid
 test -f ~/.s3sync-pid && kill -9 $(cat ~/.s3sync-pid) 2>/dev/null
 echo $$ > ~/.s3sync-pid
-printf "`date '+%Y%m%d %H:%M'`\n" > ~/.s3sync-log
+printf "`date '+%Y%m%d %H:%M'`\n" >> ~/.s3sync-log
 
 #config
 BUCKET=redbackup
@@ -30,7 +30,7 @@ else
 fi
 
 # make directory structure based on symlinks. This should be very fast.
-dirlist=$(cat dirlist.conf | sort)
+dirlist=$(cat ~/.s3sync-dirlist.conf | sort)
 rm -rf $syncdir && mkdir $syncdir
 
 for d in $dirlist
