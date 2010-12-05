@@ -1,6 +1,10 @@
 = s3sync =
 
 Laptop-proof file sync with amazon s3. Script can be put in cron/launchd. 
-Currenly backs up files marked with green label in MacOSX finder.
 
-IMPORTANT: still very much WIP and does not always find all green label folders, so please use for reference/inspiration only!
+* Backs up files in ~/.s3sync-dirlist.conf. 
+* Requires 'daily', 'weekly' and 'monthly' folders in S3 Bucket
+* Requires s3cmd (>= 1.0rc1 with follow-symlink support) setup for your S3 account
+* Requires config in s3sync for bucket name
+
+IMPORTANT: still very much WIP, please be careful!
